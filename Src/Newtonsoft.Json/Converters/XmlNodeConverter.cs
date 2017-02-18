@@ -435,7 +435,7 @@ namespace Newtonsoft.Json.Converters
 #if HAVE_XLINQ
     internal class XDeclarationWrapper : XObjectWrapper, IXmlDeclaration
     {
-        internal XDeclaration Declaration { get; private set; }
+        internal XDeclaration Declaration { get; }
 
         public XDeclarationWrapper(XDeclaration declaration)
             : base(null)
@@ -2232,10 +2232,17 @@ namespace Newtonsoft.Json.Converters
         {
             foreach (IXmlNode xmlNode in c)
             {
-                if (xmlNode.NamespaceUri != JsonNamespaceUri)
+                if (xmlNode.NamespaceUri == JsonNamespaceUri)
                 {
-                    return true;
+                    continue;
                 }
+
+                if (xmlNode.NamespaceUri == "http://www.w3.org/2000/xmlns/" && xmlNode.Value == JsonNamespaceUri)
+                {
+                    continue;
+                }
+
+                return true;
             }
 
             return false;
