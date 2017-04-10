@@ -35,6 +35,8 @@ using System.Security;
 [assembly: AssemblyTitle("Json.NET Tests .NET Standard 1.0")]
 #elif NETSTANDARD1_3
 [assembly: AssemblyTitle("Json.NET Tests .NET Standard 1.3")]
+#elif PORTABLE40
+[assembly: AssemblyTitle("Json.NET Tests Portable .NET 4.0")]
 #elif PORTABLE
 [assembly: AssemblyTitle("Json.NET Tests Portable")]
 #elif NET20

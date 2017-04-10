@@ -24,7 +24,7 @@
 #endregion
 
 using System;
-#if !(NET20 || NET35 || NET40 || PORTABLE || DNXCORE50)
+#if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40 || DNXCORE50)
 using System.Buffers;
 #endif
 using System.Collections.Generic;
@@ -592,7 +592,7 @@ namespace Newtonsoft.Json.Tests
 }", json);
         }
 
-#if !(NET20 || NET35 || NET40 || PORTABLE || DNXCORE50)
+#if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40 || DNXCORE50)
         [Test]
         public void ArrayPooling()
         {
@@ -610,14 +610,14 @@ namespace Newtonsoft.Json.Tests
         }
 #endif
 
-#if !(NET20 || NET35 || NET40 || PORTABLE || DNXCORE50)
+#if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40 || DNXCORE50)
         [Test]
         public async Task AsyncDemo()
         {
             JArray largeJson;
 
             // read asynchronously from a file
-            using (TextReader textReader = new StreamReader(new FileStream(@"large.json", FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true)))
+            using (TextReader textReader = new StreamReader(new FileStream(ResolvePath(@"large.json"), FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true)))
             {
                 largeJson = await JArray.LoadAsync(new JsonTextReader(textReader));
             }
@@ -626,7 +626,7 @@ namespace Newtonsoft.Json.Tests
             user["isActive"] = false;
 
             // write asynchronously to a file
-            using (TextWriter textWriter = new StreamWriter(new FileStream(@"large.json", FileMode.Open, FileAccess.Write, FileShare.Write, 4096, true)))
+            using (TextWriter textWriter = new StreamWriter(new FileStream(ResolvePath(@"large.json"), FileMode.Open, FileAccess.Write, FileShare.Write, 4096, true)))
             {
                 await largeJson.WriteToAsync(new JsonTextWriter(textWriter));
             }
@@ -634,7 +634,7 @@ namespace Newtonsoft.Json.Tests
 #endif
     }
 
-#if !(NET20 || NET35 || NET40 || PORTABLE || DNXCORE50)
+#if !(NET20 || NET35 || NET40 || PORTABLE || PORTABLE40 || DNXCORE50)
     public class JsonArrayPool : IArrayPool<char>
     {
         public static readonly JsonArrayPool Instance = new JsonArrayPool();
