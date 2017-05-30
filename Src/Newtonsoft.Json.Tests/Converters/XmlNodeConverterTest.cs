@@ -977,6 +977,23 @@ namespace Newtonsoft.Json.Tests.Converters
             return sw.ToString();
         }
 
+        public class Foo2
+        {
+            public XmlElement Bar { get; set; }
+        }
+
+        [Test]
+        public void SerializeAndDeserializeXmlElement()
+        {
+            Foo2 foo = new Foo2 { Bar = null };
+            string json = JsonConvert.SerializeObject(foo);
+
+            Assert.AreEqual(@"{""Bar"":null}", json);
+            Foo2 foo2 = JsonConvert.DeserializeObject<Foo2>(json);
+
+            Assert.IsNull(foo2.Bar);
+        }
+
         [Test]
         public void SingleTextNode()
         {
@@ -2108,6 +2125,107 @@ namespace Newtonsoft.Json.Tests.Converters
             string xmlString = System.Text.Encoding.UTF8.GetString(xml.ToArray());
 
             Assert.AreEqual(@"﻿<?xml version=""1.0"" encoding=""utf-8""?><root booleanType=""true"" />", xmlString);
+        }
+
+        [Test]
+        public void IgnoreCultureForTypedAttributes()
+        {
+            var originalCulture = System.Threading.Thread.CurrentThread.CurrentCulture;
+
+            try
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = new CultureInfo("ru-RU");
+
+                // in russian culture value 12.27 will be written as 12,27
+
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    Converters = { new XmlNodeConverter() },
+                });
+
+                var json = new StringBuilder(@"{
+                    ""metrics"": {
+                        ""type"": ""CPULOAD"",
+                        ""@value"": 12.27
+                    }
+                }");
+
+                using (var stringReader = new StringReader(json.ToString()))
+                using (var jsonReader = new JsonTextReader(stringReader))
+                {
+                    var document = (XmlDocument)serializer.Deserialize(jsonReader, typeof(XmlDocument));
+                    StringAssert.AreEqual(@"<metrics value=""12.27""><type>CPULOAD</type></metrics>", document.OuterXml);
+                }
+            }
+            finally
+            {
+                System.Threading.Thread.CurrentThread.CurrentCulture = originalCulture;
+            }
+        }
+
+        [Test]
+        public void NullAttributeValue()
+        {
+            var node = JsonConvert.DeserializeXmlNode(@"{
+                    ""metrics"": {
+                        ""type"": ""CPULOAD"",
+                        ""@value"": null
+                    }
+                }");
+
+            StringAssert.AreEqual(@"<metrics value=""""><type>CPULOAD</type></metrics>", node.OuterXml);
+        }
+
+        [Test]
+        public void NonStandardAttributeValues()
+        {
+            JObject o = new JObject
+            {
+                new JProperty("root", new JObject
+                {
+                    new JProperty("@uri", new JValue(new Uri("http://localhost/"))),
+                    new JProperty("@time_span", new JValue(TimeSpan.FromMinutes(1))),
+                    new JProperty("@bytes", new JValue(System.Text.Encoding.UTF8.GetBytes("Hello world")))
+                })
+            };
+
+            using (var jsonReader = o.CreateReader())
+            {
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    Converters = { new XmlNodeConverter() },
+                });
+
+                var document = (XmlDocument)serializer.Deserialize(jsonReader, typeof(XmlDocument));
+
+                StringAssert.AreEqual(@"<root uri=""http://localhost/"" time_span=""00:01:00"" bytes=""SGVsbG8gd29ybGQ="" />", document.OuterXml);
+            }
+        }
+
+        [Test]
+        public void NonStandardElementsValues()
+        {
+            JObject o = new JObject
+            {
+                new JProperty("root", new JObject
+                {
+                    new JProperty("uri", new JValue(new Uri("http://localhost/"))),
+                    new JProperty("time_span", new JValue(TimeSpan.FromMinutes(1))),
+                    new JProperty("bytes", new JValue(System.Text.Encoding.UTF8.GetBytes("Hello world")))
+                })
+            };
+
+            using (var jsonReader = o.CreateReader())
+            {
+                var serializer = JsonSerializer.Create(new JsonSerializerSettings
+                {
+                    Converters = { new XmlNodeConverter() },
+                });
+
+                var document = (XmlDocument)serializer.Deserialize(jsonReader, typeof(XmlDocument));
+
+                StringAssert.AreEqual(@"<root><uri>http://localhost/</uri><time_span>00:01:00</time_span><bytes>SGVsbG8gd29ybGQ=</bytes></root>", document.OuterXml);
+            }
         }
 
         private static void JsonBodyToSoapXml(Stream json, Stream xml)

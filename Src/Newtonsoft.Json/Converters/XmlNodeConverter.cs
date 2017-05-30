@@ -1627,7 +1627,11 @@ namespace Newtonsoft.Json.Converters
 #if HAVE_XLINQ
             if (typeof(XObject).IsAssignableFrom(objectType))
             {
-                if (objectType != typeof(XDocument) && objectType != typeof(XElement))
+                if (objectType != typeof(XContainer)
+                    && objectType != typeof(XDocument)
+                    && objectType != typeof(XElement)
+                    && objectType != typeof(XNode)
+                    && objectType != typeof(XObject))
                 {
                     throw JsonSerializationException.Create(reader, "XmlNodeConverter only supports deserializing XDocument or XElement.");
                 }
@@ -1640,9 +1644,11 @@ namespace Newtonsoft.Json.Converters
 #if HAVE_XML_DOCUMENT
             if (typeof(XmlNode).IsAssignableFrom(objectType))
             {
-                if (objectType != typeof(XmlDocument))
+                if (objectType != typeof(XmlDocument)
+                    && objectType != typeof(XmlElement)
+                    && objectType != typeof(XmlNode))
                 {
-                    throw JsonSerializationException.Create(reader, "XmlNodeConverter only supports deserializing XmlDocuments");
+                    throw JsonSerializationException.Create(reader, "XmlNodeConverter only supports deserializing XmlDocument or XmlElement.");
                 }
 
                 XmlDocument d = new XmlDocument();
@@ -1678,6 +1684,12 @@ namespace Newtonsoft.Json.Converters
                 element.Remove();
 
                 return element;
+            }
+#endif
+#if HAVE_XML_DOCUMENT
+            if (objectType == typeof(XmlElement))
+            {
+                return document.DocumentElement.WrappedNode;
             }
 #endif
 
@@ -1799,6 +1811,7 @@ namespace Newtonsoft.Json.Converters
                 case JsonToken.Float:
                 case JsonToken.Boolean:
                 case JsonToken.Date:
+                case JsonToken.Bytes:
                     string text = ConvertTokenToXmlValue(reader);
                     if (text != null)
                     {
@@ -1831,7 +1844,7 @@ namespace Newtonsoft.Json.Converters
             }
 
             string encodedName = XmlConvert.EncodeName(attributeName);
-            string attributeValue = reader.Value.ToString();
+            string attributeValue = ConvertTokenToXmlValue(reader);
 
             IXmlNode attribute = (!string.IsNullOrEmpty(attributePrefix))
                 ? document.CreateAttribute(encodedName, manager.LookupNamespace(attributePrefix), attributeValue)
@@ -1840,7 +1853,7 @@ namespace Newtonsoft.Json.Converters
             ((IXmlElement)currentNode).SetAttributeNode(attribute);
         }
 
-        private string ConvertTokenToXmlValue(JsonReader reader)
+        private static string ConvertTokenToXmlValue(JsonReader reader)
         {
             switch (reader.TokenType)
             {
@@ -1882,6 +1895,8 @@ namespace Newtonsoft.Json.Converters
 #else
                     return XmlConvert.ToString(d, DateTimeUtils.ToDateTimeFormat(d.Kind));
 #endif
+                case JsonToken.Bytes:
+                    return Convert.ToBase64String((byte[])reader.Value);
                 case JsonToken.Null:
                     return null;
                 default:
@@ -1950,6 +1965,7 @@ namespace Newtonsoft.Json.Converters
                 case JsonToken.Integer:
                 case JsonToken.Float:
                 case JsonToken.Date:
+                case JsonToken.Bytes:
                 case JsonToken.StartConstructor:
                     return null;
             }
