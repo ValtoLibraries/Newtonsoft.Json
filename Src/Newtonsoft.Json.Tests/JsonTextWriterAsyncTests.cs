@@ -48,6 +48,160 @@ namespace Newtonsoft.Json.Tests
     [TestFixture]
     public class JsonTextWriterAsyncTests : TestFixtureBase
     {
+        public class LazyStringWriter : StringWriter
+        {
+            public LazyStringWriter(IFormatProvider formatProvider) : base(formatProvider)
+            {
+            }
+
+            public override Task FlushAsync()
+            {
+                return DoDelay(base.FlushAsync());
+            }
+
+            public override Task WriteAsync(char value)
+            {
+                return DoDelay(base.WriteAsync(value));
+            }
+
+            public override Task WriteAsync(char[] buffer, int index, int count)
+            {
+                return DoDelay(base.WriteAsync(buffer, index, count));
+            }
+
+            public override Task WriteAsync(string value)
+            {
+                return DoDelay(base.WriteAsync(value));
+            }
+
+            public override Task WriteLineAsync()
+            {
+                return DoDelay(base.WriteLineAsync());
+            }
+
+            public override Task WriteLineAsync(char value)
+            {
+                return DoDelay(base.WriteLineAsync(value));
+            }
+
+            public override Task WriteLineAsync(char[] buffer, int index, int count)
+            {
+                return DoDelay(base.WriteLineAsync(buffer, index, count));
+            }
+
+            public override Task WriteLineAsync(string value)
+            {
+                return DoDelay(base.WriteLineAsync(value));
+            }
+
+            private async Task DoDelay(Task t)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(0.01));
+                await t;
+            }
+        }
+
+#if !(NETSTANDARD1_0 || PORTABLE)
+        [Test]
+        public async Task WriteLazy()
+        {
+            LazyStringWriter sw = new LazyStringWriter(CultureInfo.InvariantCulture);
+
+            using (JsonTextWriter writer = new JsonTextWriter(sw))
+            {
+                writer.Indentation = 4;
+                writer.Formatting = Formatting.Indented;
+
+                await writer.WriteStartObjectAsync();
+
+                await writer.WritePropertyNameAsync("PropByte");
+                await writer.WriteValueAsync((byte)1);
+
+                await writer.WritePropertyNameAsync("PropSByte");
+                await writer.WriteValueAsync((sbyte)2);
+
+                await writer.WritePropertyNameAsync("PropShort");
+                await writer.WriteValueAsync((short)3);
+
+                await writer.WritePropertyNameAsync("PropUInt");
+                await writer.WriteValueAsync((uint)4);
+
+                await writer.WritePropertyNameAsync("PropUShort");
+                await writer.WriteValueAsync((ushort)5);
+
+                await writer.WritePropertyNameAsync("PropUri");
+                await writer.WriteValueAsync(new Uri("http://localhost/"));
+
+                await writer.WritePropertyNameAsync("PropRaw");
+                await writer.WriteRawValueAsync("'raw string'");
+
+                await writer.WritePropertyNameAsync("PropObjectNull");
+                await writer.WriteValueAsync((object)null);
+
+                await writer.WritePropertyNameAsync("PropObjectBigInteger");
+                await writer.WriteValueAsync((object)System.Numerics.BigInteger.Parse("123456789012345678901234567890"));
+
+                await writer.WritePropertyNameAsync("PropUndefined");
+                await writer.WriteUndefinedAsync();
+
+                await writer.WritePropertyNameAsync(@"PropEscaped ""name""", true);
+                await writer.WriteNullAsync();
+
+                await writer.WritePropertyNameAsync(@"PropUnescaped", false);
+                await writer.WriteNullAsync();
+
+                await writer.WritePropertyNameAsync("PropArray");
+                await writer.WriteStartArrayAsync();
+
+                await writer.WriteValueAsync("string!");
+
+                await writer.WriteEndArrayAsync();
+
+                await writer.WritePropertyNameAsync("PropNested");
+                await writer.WriteStartArrayAsync();
+                await writer.WriteStartArrayAsync();
+                await writer.WriteStartArrayAsync();
+                await writer.WriteStartArrayAsync();
+                await writer.WriteStartArrayAsync();
+
+                await writer.WriteEndArrayAsync();
+                await writer.WriteEndArrayAsync();
+                await writer.WriteEndArrayAsync();
+                await writer.WriteEndArrayAsync();
+                await writer.WriteEndArrayAsync();
+
+                await writer.WriteEndObjectAsync();
+            }
+
+            StringAssert.AreEqual(@"{
+    ""PropByte"": 1,
+    ""PropSByte"": 2,
+    ""PropShort"": 3,
+    ""PropUInt"": 4,
+    ""PropUShort"": 5,
+    ""PropUri"": ""http://localhost/"",
+    ""PropRaw"": 'raw string',
+    ""PropObjectNull"": null,
+    ""PropObjectBigInteger"": 123456789012345678901234567890,
+    ""PropUndefined"": undefined,
+    ""PropEscaped \""name\"""": null,
+    ""PropUnescaped"": null,
+    ""PropArray"": [
+        ""string!""
+    ],
+    ""PropNested"": [
+        [
+            [
+                [
+                    []
+                ]
+            ]
+        ]
+    ]
+}", sw.ToString());
+        }
+#endif
+
         [Test]
         public async Task BufferTestAsync()
         {

@@ -1341,13 +1341,10 @@ namespace Newtonsoft.Json.Tests.Serialization
             serializer.SerializationBinder = customBinder;
             Assert.AreEqual(customBinder, serializer.SerializationBinder);
 
-            ExceptionAssert.Throws<InvalidOperationException>(() =>
-            {
 #pragma warning disable CS0618 // Type or member is obsolete
-                var serializationBinder = serializer.Binder;
+            // can still fetch because DefaultSerializationBinder inherits from SerializationBinder
+            Assert.AreEqual(customBinder, serializer.Binder);
 #pragma warning restore CS0618 // Type or member is obsolete
-                serializationBinder.ToString();
-            }, "Cannot get SerializationBinder because an ISerializationBinder was previously set.");
 
             serializer.CheckAdditionalContent = true;
             Assert.AreEqual(true, serializer.CheckAdditionalContent);
@@ -1578,13 +1575,11 @@ namespace Newtonsoft.Json.Tests.Serialization
             serializerProxy.SerializationBinder = customBinder;
             Assert.AreEqual(customBinder, serializerProxy.SerializationBinder);
 
-            ExceptionAssert.Throws<InvalidOperationException>(() =>
-            {
 #pragma warning disable CS0618 // Type or member is obsolete
-                var serializationBinder = serializerProxy.Binder;
+            // can still fetch because DefaultSerializationBinder inherits from SerializationBinder
+            Assert.AreEqual(customBinder, serializerProxy.Binder);
 #pragma warning restore CS0618 // Type or member is obsolete
-                serializationBinder.ToString();
-            }, "Cannot get SerializationBinder because an ISerializationBinder was previously set.");
+
 
             serializerProxy.CheckAdditionalContent = true;
             Assert.AreEqual(true, serializerProxy.CheckAdditionalContent);
