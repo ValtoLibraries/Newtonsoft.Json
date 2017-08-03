@@ -2151,6 +2151,20 @@ namespace Newtonsoft.Json.Tests.Serialization
             Assert.IsInstanceOf(typeof(FancyBinder), serializer.SerializationBinder);
         }
 
+        [Test]
+        public void SetOldBinderAndSerializationBinderReturnsWrapper()
+        {
+#pragma warning disable CS0618 // Type or member is obsolete
+            var serializer = JsonSerializer.Create(new JsonSerializerSettings() { Binder = new OldBinder() });
+            Assert.IsInstanceOf(typeof(OldBinder), serializer.Binder);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            var binder = serializer.SerializationBinder;
+
+            Assert.IsInstanceOf(typeof(SerializationBinderAdapter), binder);
+            Assert.AreEqual(typeof(string), binder.BindToType(null, null));
+        }
+
         public class FancyBinder : ISerializationBinder
         {
             private static readonly string Annotate = new string(':', 3);
@@ -2166,6 +2180,16 @@ namespace Newtonsoft.Json.Tests.Serialization
                 return null;
             }
         }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        public class OldBinder : SerializationBinder
+        {
+            public override Type BindToType(string assemblyName, string typeName)
+            {
+                return typeof(string);
+            }
+        }
+#pragma warning restore CS0618 // Type or member is obsolete
 #endif
     }
 

@@ -38,6 +38,7 @@ namespace Newtonsoft.Json
     {
         Read,
         ReadAsInt32,
+        ReadAsInt64,
         ReadAsBytes,
         ReadAsString,
         ReadAsDecimal,
@@ -1458,6 +1459,13 @@ namespace Newtonsoft.Json
                         }
                         else
                         {
+                            // handle multiple content without comma delimiter
+                            if (SupportMultipleContent && Depth == 0)
+                            {
+                                SetStateBasedOnCurrent();
+                                return false;
+                            }
+
                             throw JsonReaderException.Create(this, "After parsing a value an unexpected character was encountered: {0}.".FormatWith(CultureInfo.InvariantCulture, currentChar));
                         }
                         break;
