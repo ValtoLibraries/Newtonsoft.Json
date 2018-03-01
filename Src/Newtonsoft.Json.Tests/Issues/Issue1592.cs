@@ -23,17 +23,43 @@
 // OTHER DEALINGS IN THE SOFTWARE.
 #endregion
 
-namespace Newtonsoft.Json.Utilities
-{
-    internal class EnumValue<T> where T : struct
-    {
-        public string Name { get; }
-        public T Value { get; }
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+#if DNXCORE50
+using Xunit;
+using Test = Xunit.FactAttribute;
+using Assert = Newtonsoft.Json.Tests.XUnitAssert;
+#else
+using NUnit.Framework;
+#endif
 
-        public EnumValue(string name, T value)
+namespace Newtonsoft.Json.Tests.Issues
+{
+    [TestFixture]
+    public class Issue1592 : TestFixtureBase
+    {
+        [Test]
+        public void Test()
         {
-            Name = name;
-            Value = value;
+            string json = @"{
+""test customer's"": ""testing""
+}";
+
+            StringReader stringReader = new StringReader(json);
+            JsonTextReader reader = new JsonTextReader(stringReader);
+
+            reader.Read();
+            reader.Read();
+            reader.Read();
+
+            Assert.AreEqual("testing", reader.Value);
+            Assert.AreEqual("['test customer\\'s']", reader.Path);
         }
     }
 }
